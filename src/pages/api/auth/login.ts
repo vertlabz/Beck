@@ -5,6 +5,7 @@ import { verifyPassword } from '../../../lib/hash'
 import { signAccessToken } from '../../../lib/auth'
 import { setRefreshTokenCookie } from '../../../lib/cookies'
 import crypto from 'crypto'
+import { applyCors } from '../../../lib/cors'
 
 type UserSafe = { id: string; name: string; email: string; isProvider: boolean }
 
@@ -15,8 +16,11 @@ type ResponseBody =
 const REFRESH_EXPIRES_DAYS = Number(process.env.JWT_REFRESH_EXPIRES_DAYS || 30)
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) {
+  // ✅ CORS + preflight
+  if (applyCors(req, res)) return
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
+    res.setHeader('Allow', 'POST, OPTIONS')
     return res.status(405).json({ message: 'Method not allowed. Use POST.' })
   }
 
