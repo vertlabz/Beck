@@ -2,8 +2,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { requireAuth } from '../../../middleware/requireAuth'
+import { applyCors } from '../../../lib/cors'
+
 
 export default requireAuth(async (req: NextApiRequest & { user?: { userId: string } }, res: NextApiResponse) => {
+  // ✅ CORS + preflight (OPTIONS)
+  if (applyCors(req, res)) return
+
   const userId = req.user!.userId
 
   const user = await prisma.user.findUnique({

@@ -1,8 +1,13 @@
 // src/pages/api/providers/[id].ts
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
+import { applyCors } from '../../../lib/cors'
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // ✅ CORS + preflight (OPTIONS)
+  if (applyCors(req, res)) return
+
   const { id } = req.query
 
   if (req.method !== 'GET') {

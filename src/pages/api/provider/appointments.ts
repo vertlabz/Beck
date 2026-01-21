@@ -4,8 +4,13 @@ import { prisma } from '../../../lib/prisma'
 import { AppointmentStatus } from '@prisma/client'
 import { getSaoPauloDayRangeFromLocalDate } from '../../../lib/saoPauloTime'
 import { requireAuth } from '../../../middleware/requireAuth'
+import { applyCors } from '../../../lib/cors'
+
 
 export default requireAuth(async (req: NextApiRequest & { user?: { userId: string } }, res: NextApiResponse) => {
+  // ✅ CORS + preflight (OPTIONS)
+  if (applyCors(req, res)) return
+
   const userId = req.user!.userId
 
   if (req.method !== 'GET') {
