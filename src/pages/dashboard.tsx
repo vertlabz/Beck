@@ -1,6 +1,7 @@
 // src/pages/dashboard.tsx
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import { getAppointmentStatusLabel } from '../lib/appointmentStatus'
 
 type Appointment = {
   id: string
@@ -368,7 +369,7 @@ export default function DashboardPage() {
                     {a.service?.name} — {a.service?.duration} min
                   </div>
                   <div>Barbeiro: {a.provider?.name}</div>
-                  <div>Status: {a.status}</div>
+                  <div>Status: {getAppointmentStatusLabel(a.status)}</div>
                 </li>
               )
             })}

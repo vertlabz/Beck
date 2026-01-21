@@ -1,6 +1,7 @@
 // src/pages/provider/dashboard.tsx
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import { getAppointmentStatusLabel } from '../../lib/appointmentStatus'
 
 type CurrentUser = {
   id: string
@@ -414,7 +415,8 @@ export default function ProviderDashboard() {
                       </div>
                     )}
                     <div>
-                      <strong style={{ color: '#e6e8eb' }}>Status:</strong> {appt.status}
+                      <strong style={{ color: '#e6e8eb' }}>Status:</strong>{' '}
+                      {getAppointmentStatusLabel(appt.status)}
                     </div>
                     {appt.notes && (
                       <div>
