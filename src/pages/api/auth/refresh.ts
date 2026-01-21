@@ -4,11 +4,18 @@ import { prisma } from '../../../lib/prisma'
 import { signAccessToken } from '../../../lib/auth'
 import { setRefreshTokenCookie, clearRefreshTokenCookie, parseCookieHeader } from '../../../lib/cookies'
 import crypto from 'crypto'
+import { applyCors } from '../../../lib/cors'
 
 const REFRESH_EXPIRES_DAYS = Number(process.env.JWT_REFRESH_EXPIRES_DAYS || 30)
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end()
+  // ✅ CORS + preflight (OPTIONS)
+  if (applyCors(req, res)) return
+
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST, OPTIONS')
+    return res.status(405).end()
+  }
 
   const cookies = parseCookieHeader(req.headers.cookie)
   const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'rtk'
@@ -45,13 +52,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       type: 'REFRESH',
       token: newRefreshToken,
       expiresAt,
-      used: false
-    }
+      used: false,
+    },
   })
   setRefreshTokenCookie(res, newRefreshToken, REFRESH_EXPIRES_DAYS * 24 * 60 * 60)
 
   // Issue new access token
   const accessToken = signAccessToken({ userId: tokenRecord.userId })
   const user = await prisma.user.findUnique({ where: { id: tokenRecord.userId } })
-  return res.json({ accessToken, user: user ? { id: user.id, name: user.name, email: user.email, isProvider: user.isProvider } : null })
+
+  return res.json({
+    accessToken,
+    user: user ? { id: user.id, name: user.name, email: user.email, isProvider: user.isProvider } : null,
+  })
 }

@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../../../lib/prisma'
 import { Prisma } from '@prisma/client'
+import { applyCors } from '../../../lib/cors'
 
 type ResponseBody =
   | { message: string }
@@ -11,8 +12,11 @@ type ResponseBody =
 const SALT_ROUNDS = 10
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) {
+  // ✅ CORS + preflight (OPTIONS)
+  if (applyCors(req, res)) return
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
+    res.setHeader('Allow', 'POST, OPTIONS')
     return res.status(405).json({ message: 'Method not allowed. Use POST.' })
   }
 
@@ -26,9 +30,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const cleanEmail = String(email).trim().toLowerCase()
     const cleanName = String(name).trim()
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       return res.status(400).json({ message: 'Invalid email format' })
     }
+
     if (String(password).length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' })
     }
