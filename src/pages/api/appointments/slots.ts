@@ -2,9 +2,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { AppointmentStatus } from '@prisma/client'
-import {
 import { applyCors } from '../../../lib/cors'
-
+import {
   getSaoPauloDayRangeFromLocalDate,
   saoPauloMinutesFromMidnight,
   OFFSET_MS,
