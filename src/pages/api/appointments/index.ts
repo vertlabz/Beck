@@ -8,7 +8,6 @@ import {
   saoPauloMinutesFromMidnight,
 } from '../../../lib/saoPauloTime'
 import { requireAuth } from '../../../middleware/requireAuth'
-import { applyCors } from '../../../lib/cors'
 
 
 function intervalsOverlap(startA: number, endA: number, startB: number, endB: number): boolean {
@@ -19,9 +18,6 @@ function intervalsOverlap(startA: number, endA: number, startB: number, endB: nu
 
 export default requireAuth(
   async (req: NextApiRequest & { user?: { userId: string } }, res: NextApiResponse) => {
-  // ✅ CORS + preflight (OPTIONS)
-  if (applyCors(req, res)) return
-
     const userId = req.user!.userId
 
     if (req.method === 'GET') {
