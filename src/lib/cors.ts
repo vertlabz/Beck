@@ -11,14 +11,28 @@ const LOCAL_ORIGINS = new Set([
 function isAllowedOrigin(origin: string): boolean {
   if (LOCAL_ORIGINS.has(origin)) return true
 
-  // Produção / previews do seu web app na Vercel
-  // Aceita:
+  // Produção / previews dos dois frontends na Vercel (Expo Web + Web Admin)
+  // Aceita (exemplos):
+  // Expo Web:
   // - https://vitin-barber-expo.vercel.app
-  // - https://vitin-barber-expo-git-<branch>-<hash>.vercel.app (previews)
-  // - https://vitin-barber-expo-<hash>.vercel.app (previews)
+  // - https://vitin-barber-expo-abc123.vercel.app
+  // - https://vitin-barber-expo-git-main-abc123.vercel.app
+  // Web Admin:
+  // - https://vitinho-barber-web-admin.vercel.app
+  // - https://vitinho-barber-web-admin-abc123.vercel.app
+  // - https://vitinho-barber-web-admin-git-main-abc123.vercel.app
+  // - https://vitinho-barber-web-admin-abc123-vertlabzs-projects.vercel.app (previews antigos)
+  // Rejeita (exemplos):
+  // - https://vitinho-barber-web-admin.evil.com
+  // - https://vitinho-barber-web-admin-preview.vercel.app
   if (
-    /^https:\/\/vitin-barber-expo(\-[a-z0-9-]+)?\.vercel\.app$/i.test(origin) ||
-    /^https:\/\/vitin-barber-expo-git-[a-z0-9-]+-[a-z0-9-]+\.vercel\.app$/i.test(origin)
+    origin === 'https://vitin-barber-expo.vercel.app' ||
+    /^https:\/\/vitin-barber-expo-[a-z0-9-]+\.vercel\.app$/i.test(origin) ||
+    /^https:\/\/vitin-barber-expo-git-[a-z0-9-]+-[a-z0-9-]+\.vercel\.app$/i.test(origin) ||
+    origin === 'https://vitinho-barber-web-admin.vercel.app' ||
+    /^https:\/\/vitinho-barber-web-admin-[a-z0-9-]+\.vercel\.app$/i.test(origin) ||
+    /^https:\/\/vitinho-barber-web-admin-git-[a-z0-9-]+-[a-z0-9-]+\.vercel\.app$/i.test(origin) ||
+    /^https:\/\/vitinho-barber-web-admin-[a-z0-9-]+-vertlabzs-projects\.vercel\.app$/i.test(origin)
   ) {
     return true
   }
