@@ -8,6 +8,8 @@ import {
   saoPauloMinutesFromMidnight,
 } from '../../../lib/saoPauloTime'
 import { requireAuth } from '../../../middleware/requireAuth'
+import { startAppointmentCompletionJob } from '../../../lib/appointments/appointmentCompletionJob'
+import { updateCompletedAppointments } from '../../../lib/appointments/updateCompletedAppointments'
 
 
 function intervalsOverlap(startA: number, endA: number, startB: number, endB: number): boolean {
@@ -16,11 +18,14 @@ function intervalsOverlap(startA: number, endA: number, startB: number, endB: nu
 
 // helpers moved to src/lib/saoPauloTime.ts
 
+startAppointmentCompletionJob()
+
 export default requireAuth(
   async (req: NextApiRequest & { user?: { userId: string } }, res: NextApiResponse) => {
     const userId = req.user!.userId
 
     if (req.method === 'GET') {
+      await updateCompletedAppointments({ customerId: userId })
       // Lista agendamentos como CLIENTE (customer)
       const appointments = await prisma.appointment.findMany({
         where: { customerId: userId },

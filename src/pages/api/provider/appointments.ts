@@ -5,7 +5,10 @@ import { AppointmentStatus } from '@prisma/client'
 import { getSaoPauloDayRangeFromLocalDate } from '../../../lib/saoPauloTime'
 import { requireAuth } from '../../../middleware/requireAuth'
 import { applyCors } from '../../../lib/cors'
+import { startAppointmentCompletionJob } from '../../../lib/appointments/appointmentCompletionJob'
+import { updateCompletedAppointments } from '../../../lib/appointments/updateCompletedAppointments'
 
+startAppointmentCompletionJob()
 
 export default requireAuth(async (req: NextApiRequest & { user?: { userId: string } }, res: NextApiResponse) => {
   // ✅ CORS + preflight (OPTIONS)
@@ -41,6 +44,8 @@ export default requireAuth(async (req: NextApiRequest & { user?: { userId: strin
   } catch {
     return res.status(400).json({ error: 'Invalid date format (expected YYYY-MM-DD)' })
   }
+
+  await updateCompletedAppointments({ providerId: user.id })
 
   const appointments = await prisma.appointment.findMany({
     where: {
