@@ -1,20 +1,11 @@
 import type { GetServerSideProps } from 'next'
+import { getHealthSnapshot, type HealthSnapshot } from '../lib/health'
+import styles from './health.module.css'
 
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'] as const
 
-type MemoryUsage = {
-  rss: number
-  heapUsed: number
-  heapTotal: number
-  external: number
-}
-
 type HealthProps = {
-  status: string
-  uptime: number
-  timestamp: string
-  nodeVersion: string
-  memoryUsage: MemoryUsage
+  snapshot: HealthSnapshot
 }
 
 function formatBytes(value: number) {
@@ -29,63 +20,109 @@ function formatBytes(value: number) {
   return `${converted.toFixed(2)} ${BYTE_UNITS[exponent]}`
 }
 
-export const getServerSideProps: GetServerSideProps<HealthProps> = async () => {
-  const memory = process.memoryUsage()
+function formatSeconds(value: number) {
+  const hours = Math.floor(value / 3600)
+  const minutes = Math.floor((value % 3600) / 60)
+  const seconds = Math.floor(value % 60)
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`
+  }
+
+  return `${seconds}s`
+}
+
+export const getServerSideProps: GetServerSideProps<HealthProps> = async ({ res }) => {
+  const snapshot = await getHealthSnapshot()
+
+  if (res && snapshot.status === 'degraded') {
+    res.statusCode = 503
+  }
 
   return {
     props: {
-      status: 'ok',
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
-      nodeVersion: process.version,
-      memoryUsage: {
-        rss: memory.rss,
-        heapUsed: memory.heapUsed,
-        heapTotal: memory.heapTotal,
-        external: memory.external,
-      },
+      snapshot,
     },
   }
 }
 
-export default function HealthPage({
-  status,
-  uptime,
-  timestamp,
-  nodeVersion,
-  memoryUsage,
-}: HealthProps) {
+export default function HealthPage({ snapshot }: HealthProps) {
+  const { status, uptimeSeconds, timestamp, nodeVersion, memory, db, build } = snapshot
+  const isOk = status === 'ok'
+
   return (
-    <main
-      style={{
-        maxWidth: 720,
-        margin: '48px auto',
-        padding: '0 24px',
-        fontFamily: 'sans-serif',
-      }}
-    >
-      <h1>Saúde do sistema</h1>
-      <p>Endpoint: GET /health</p>
+    <main className={styles.page}>
+      <div className={styles.container}>
+        <header className={styles.header}>
+          <div>
+            <p className={styles.eyebrow}>Monitoramento</p>
+            <h1 className={styles.title}>Saúde do sistema</h1>
+            <p className={styles.subtitle}>Endpoint: GET /health</p>
+          </div>
+          <button
+            type="button"
+            className={styles.refreshButton}
+            onClick={() => window.location.reload()}
+          >
+            Atualizar
+          </button>
+        </header>
 
-      <section style={{ marginTop: 24 }}>
-        <h2>Status</h2>
-        <p>
-          <strong>{status.toUpperCase()}</strong>
-        </p>
-      </section>
+        <section className={styles.mainCard}>
+          <div>
+            <h2 className={styles.cardTitle}>Status geral</h2>
+            <p className={styles.cardMeta}>Atualizado em {new Date(timestamp).toLocaleString()}</p>
+          </div>
+          <span className={isOk ? styles.badgeOk : styles.badgeDegraded}>
+            {isOk ? 'OK' : 'DEGRADED'}
+          </span>
+        </section>
 
-      <section style={{ marginTop: 24 }}>
-        <h2>Detalhes</h2>
-        <ul>
-          <li>Timestamp: {timestamp}</li>
-          <li>Uptime: {Math.round(uptime)}s</li>
-          <li>Node: {nodeVersion}</li>
-          <li>Memória RSS: {formatBytes(memoryUsage.rss)}</li>
-          <li>Memória Heap: {formatBytes(memoryUsage.heapUsed)}</li>
-          <li>Heap Total: {formatBytes(memoryUsage.heapTotal)}</li>
-          <li>Memória Externa: {formatBytes(memoryUsage.external)}</li>
-        </ul>
-      </section>
+        <div className={styles.grid}>
+          <section className={styles.card}>
+            <h3 className={styles.cardTitle}>Banco de dados</h3>
+            <p className={styles.cardValue}>{db.status === 'ok' ? 'Conectado' : 'Indisponível'}</p>
+            <p className={styles.cardMeta}>
+              {db.status === 'ok'
+                ? `Latência: ${db.latencyMs ?? 0} ms`
+                : db.error ?? 'Erro de conexão'}
+            </p>
+          </section>
+
+          <section className={styles.card}>
+            <h3 className={styles.cardTitle}>Runtime</h3>
+            <p className={styles.cardValue}>{formatSeconds(uptimeSeconds)} de uptime</p>
+            <p className={styles.cardMeta}>Node {nodeVersion}</p>
+          </section>
+
+          <section className={styles.card}>
+            <h3 className={styles.cardTitle}>Memória</h3>
+            <ul className={styles.list}>
+              <li>RSS: {formatBytes(memory.rss)}</li>
+              <li>Heap usado: {formatBytes(memory.heapUsed)}</li>
+              <li>Heap total: {formatBytes(memory.heapTotal)}</li>
+              <li>Externa: {formatBytes(memory.external)}</li>
+            </ul>
+          </section>
+
+          <section className={styles.card}>
+            <h3 className={styles.cardTitle}>Build</h3>
+            {build ? (
+              <ul className={styles.list}>
+                <li>Commit: {build.gitCommit ?? 'N/A'}</li>
+                <li>URL: {build.vercelUrl ?? 'N/A'}</li>
+                <li>Ambiente: {build.environment ?? 'N/A'}</li>
+              </ul>
+            ) : (
+              <p className={styles.cardMeta}>Informações não disponíveis.</p>
+            )}
+          </section>
+        </div>
+      </div>
     </main>
   )
 }
