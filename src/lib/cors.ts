@@ -11,13 +11,14 @@ const LOCAL_ORIGINS = new Set([
 function isAllowedOrigin(origin: string): boolean {
   if (LOCAL_ORIGINS.has(origin)) return true
 
-  // Produção / previews do seu web admin na Vercel
+  // Produção / previews do seu web app na Vercel
   // Aceita:
-  // - https://vitinho-barber-web-admin.vercel.app
-  // - https://vitinho-barber-web-admin-<hash>-vertlabzs-projects.vercel.app (previews)
+  // - https://vitin-barber-expo.vercel.app
+  // - https://vitin-barber-expo-git-<branch>-<hash>.vercel.app (previews)
+  // - https://vitin-barber-expo-<hash>.vercel.app (previews)
   if (
-    /^https:\/\/vitinho-barber-web-admin(\-[a-z0-9-]+)?\.vercel\.app$/i.test(origin) ||
-    /^https:\/\/vitinho-barber-web-admin\-[a-z0-9-]+\-vertlabzs-projects\.vercel\.app$/i.test(origin)
+    /^https:\/\/vitin-barber-expo(\-[a-z0-9-]+)?\.vercel\.app$/i.test(origin) ||
+    /^https:\/\/vitin-barber-expo-git-[a-z0-9-]+-[a-z0-9-]+\.vercel\.app$/i.test(origin)
   ) {
     return true
   }
@@ -43,7 +44,11 @@ export function applyCors(req: NextApiRequest, res: NextApiResponse): boolean {
   }
 
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Authorization, Content-Type, Accept, Origin, X-Requested-With'
+  )
+  res.setHeader('Access-Control-Max-Age', '86400')
 
   // Preflight
   if (req.method === 'OPTIONS') {
