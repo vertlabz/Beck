@@ -71,6 +71,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const diffDays = localDayTarget - localDayNow
   const maxDays = provider.maxBookingDays ?? 7
+  const graceMinutes = 5
+  const nowSpMinutes = saoPauloMinutesFromMidnight(nowUtc)
+  const minStartAllowed = nowSpMinutes + graceMinutes
 
   if (diffDays < 0) {
     return res.status(400).json({ error: 'Cannot book past dates' })
@@ -128,6 +131,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     for (let slotStart = windowStartMin; slotStart + duration <= windowEndMin; slotStart += duration) {
       const slotEnd = slotStart + duration
+
+      // Para o dia de hoje em SP, não permitir slots no passado (com tolerância).
+      if (diffDays === 0 && slotStart < minStartAllowed) continue
 
       // 1) Verifica bloqueios
       const blocked = blocks.some(block => {
